@@ -14,6 +14,9 @@ require_once 'include/upload_file.php';
 class Documents extends CRMEntity {
 	public $db;
 	public $log;
+        
+        	// cache variable
+	private static $__cache_documents = array();
 
 	public $table_name = 'vtiger_notes';
 	public $table_index= 'notesid';
@@ -604,5 +607,175 @@ class Documents extends CRMEntity {
 		$log->debug("Exiting getEntities method ...");
 		return $return_data;
 	}
+        
+        		/**
+	 *Invoked to disable tracking for the module.
+	 * @param Integer $tabid
+	 */
+	public static function disableDocumentsForModule($tabid) {
+		global $adb;
+		if (!self::isModulePresent($tabid)) {
+			$adb->pquery('INSERT INTO vtiger_notes_tabs VALUES(?,?)', array($tabid, 0));
+		} else {
+			$adb->pquery('UPDATE vtiger_notes_tabs SET visible = 0 WHERE tabid = ?', array($tabid));
+		}
+		self::updateCache($tabid, 0);
+		if (self::isDocumentsLinkPresent($tabid)) {
+			$moduleInstance=Vtiger_Module::getInstance($tabid);
+			$moduleInstance->deleteLink('DETAILVIEWBASIC', 'View History');
+                        $moduleInstance->deleteLink('HEADERSCRIPT', 'DocumentsCommon_JS');
+                        $moduleInstance->deleteLink('HEADERCSS', 'DocumentsDropzoneCSS');
+			$moduleInstance->deleteLink('HEADERCSS', 'DocumentsDropzoneCustomCSS');
+			$moduleInstance->deleteLink('HEADERSCRIPT', 'DocumentsDropzoneJS');
+                        $moduleInstance->deleteLink('DETAILVIEWWIDGET', 'Upload Documents');
+		}
+	}
+
+	/**
+	 *Invoked to enable tracking for the module.
+	 * @param Integer $tabid
+	 */
+	public static function enableDocumentsForModule($tabid) {
+		global $adb;
+		if (!self::isModulePresent($tabid)) {
+			$adb->pquery('INSERT INTO vtiger_notes_tabs VALUES(?,?)', array($tabid,1));
+		} else {
+			$adb->pquery('UPDATE vtiger_notes_tabs SET visible = 1 WHERE tabid = ?', array($tabid));
+		}
+		self::updateCache($tabid, 1);
+		if (!self::isDocumentsLinkPresent($tabid)) {
+			$moduleInstance=Vtiger_Module::getInstance($tabid);
+			$moduleInstance->addLink(
+				'DETAILVIEWBASIC',
+				'View History',
+				"javascript:DocumentsCommon.showhistory('\$RECORD\$')",
+				'',
+				0,
+				array('path'=>'modules/Documents/Documents.php','class'=>'Documents','method'=>'isViewPermitted')
+			);
+			$moduleInstance->addLink('HEADERSCRIPT', 'DocumentsCommon_JS', 'modules/Documents/DocumentsCommon.js');
+                        $moduleInstance->addLink('HEADERCSS', 'DocumentsDropzoneCSS', 'include/dropzone/dropzone.css', 0, '', null, TRUE);
+			$moduleInstance->addLink('HEADERCSS', 'DocumentsDropzoneCustomCSS', 'include/dropzone/custom.css', 1, '', null, TRUE);
+			$moduleInstance->addLink('HEADERSCRIPT', 'DocumentsDropzoneJS', 'include/dropzone/dropzone.js', '', 2, null, TRUE);
+                        $moduleInstance->addLink('DETAILVIEWWIDGET', 'Upload Documents', 'module=Documents&action=DocumentsAjax&file=WidgetUpload&record=$RECORD$');
+                        
+		}
+	}
+        public static function isViewPermitted($linkData) {
+		$moduleName = $linkData->getModule();
+		$recordId = $linkData->getInputParameter('record');
+		return isPermitted($moduleName, 'DetailView', $recordId) == 'yes';
+	}
+        
+        public static function isModulePresent($tabid) {
+		global $adb;
+		if (!self::checkModuleInDocumentsCache($tabid)) {
+			$query=$adb->pquery('SELECT * FROM vtiger_notes_tabs WHERE tabid = ?', array($tabid));
+			$rows = $adb->num_rows($query);
+			if ($rows) {
+				$tabid=$adb->query_result($query, 0, 'tabid');
+				$visible=$adb->query_result($query, 0, 'visible');
+				self::updateCache($tabid, $visible);
+				return true;
+			} else {
+				return false;
+			}
+		} else {
+			return true;
+		}
+	}
+        /**
+	 *Invoked to check if Documents links are enabled for the module.
+	 * @param Integer $tabid
+	 */
+	public static function isDocumentsLinkPresent($tabid) {
+		global $adb;
+		$rs=$adb->pquery("SELECT * FROM vtiger_links WHERE linktype='DETAILVIEWBASIC' AND linklabel = 'View History' AND tabid = ?", array($tabid));
+		return ($adb->num_rows($rs)>=1);
+	}
+        
+        	/**
+	 *Invoked to check the ModTracker cache.
+	 * @param Integer $tabid
+	 */
+	public static function checkModuleInDocumentsCache($tabid) {
+		if (isset(self::$__cache_documents[$tabid])) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+        public function vtlib_handler($moduleName, $eventType) {
+		global $adb, $currentModule;
+
+		$documentsModule = Vtiger_Module::getInstance($currentModule);
+		$this->getDocumentsEnabledModules();
+
+		if ($eventType == 'module.postinstall') {
+			$adb->pquery('UPDATE vtiger_tab SET customized=0 WHERE name=?', array($moduleName));
+
+			$fieldid = $adb->getUniqueID('vtiger_settings_field');
+			$blockid = getSettingsBlockId('LBL_OTHER_SETTINGS');
+			$seq_res = $adb->pquery('SELECT max(sequence) AS max_seq FROM vtiger_settings_field WHERE blockid = ?', array($blockid));
+			if ($adb->num_rows($seq_res) > 0) {
+				$cur_seq = $adb->query_result($seq_res, 0, 'max_seq');
+				if ($cur_seq != null) {
+					$seq = $cur_seq + 1;
+				}
+			}
+			$mturl = 'index.php?module=Documents&action=BasicSettings&parenttab=Settings&formodule=Documents';
+			$adb->pquery(
+				'INSERT INTO vtiger_settings_field(fieldid, blockid, name, iconpath, description, linkto, sequence) VALUES (?,?,?,?,?,?,?)',
+				array($fieldid, $blockid, 'Documents', 'set-IcoLoginHistory.gif', 'LBL_MODTRACKER_DESCRIPTION', $mturl, $seq)
+			);
+		} elseif ($eventType == 'module.disabled') {
+			$em = new VTEventsManager($adb);
+			$em->setHandlerInActive('DocumentsHandler');
+			// De-register Common Javascript
+			$documentsModule->deleteLink('HEADERSCRIPT', 'DocumentsCommon_JS');
+		} elseif ($eventType == 'module.enabled') {
+			$em = new VTEventsManager($adb);
+			$em->setHandlerActive('DocumentsHandler');
+			// Register Common Javascript
+			$documentsModule->addLink('HEADERSCRIPT', 'DocumentsCommon_JS', 'modules/Documents/DocumentsCommon.js');
+		} elseif ($eventType == 'module.preuninstall') {
+			// TODO Handle actions when this module is about to be deleted.
+		} elseif ($eventType == 'module.preupdate') {
+			// TODO Handle actions before this module is updated.
+		} elseif ($eventType == 'module.postupdate') {
+			// TODO Handle actions after this module is updated.
+		}
+	}
+
+	/**
+	 * function gives an array of module names for which modtracking is enabled
+	*/
+	public function getDocumentsEnabledModules() {
+		global $adb;
+		$moduleResult = $adb->pquery('SELECT * FROM vtiger_notes_tabs', array());
+		for ($i=0; $i<$adb->num_rows($moduleResult); $i++) {
+			$tabId = $adb->query_result($moduleResult, $i, 'tabid');
+			$visible = $adb->query_result($moduleResult, $i, 'visible');
+			self::updateCache($tabId, $visible);
+			if ($visible == 1) {
+				$modules[] = getTabModuleName($tabId);
+			}
+		}
+		return $modules;
+	}
+        	/**
+	 *Invoked to update cache.
+	 * @param Integer $tabid
+	 * @param Boolean $visible
+	 */
+	public static function updateCache($tabid, $visible) {
+		self::$__cache_documents[$tabid] = array(
+			'tabid'   => $tabid,
+			'visible' => $visible
+		);
+	}
+
+
+
 }
 ?>

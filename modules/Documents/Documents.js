@@ -339,3 +339,15 @@ function checkFileIntegrityDetailView(noteid) {
 function hideresult() {
 	document.getElementById('integrity_result').style.display = 'none';
 }
+
+
+function toggleModule_mod(tabid, action) {
+	document.getElementById('status').style.display='block';
+	jQuery.ajax({
+		method: 'post',
+		url: 'index.php?module=Documents&action=DocumentsAjax&file=BasicSettings&tabid='+tabid+'&status='+action+'&ajax=true',
+	}).done(function (response) {
+		document.getElementById('status').style.display='none';
+		document.getElementById('modDocsContents').innerHTML=response;
+	});
+}

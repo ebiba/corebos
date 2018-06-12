@@ -25,12 +25,16 @@ if (!is_admin($current_user)) {
 	$module = vtlib_purify($_REQUEST['formodule']);
 
 	$menu_array = array();
-
+        // Few more configuration
+	$menu_array['CONFIGURATION']['location'] = 'index.php?module=Documents&action=BasicSettings&parenttab=Settings&formodule=Documents';
+	$menu_array['CONFIGURATION']['image_src']= 'themes/images/toggleactive.png';
+	$menu_array['CONFIGURATION']['desc'] = getTranslatedString('LBL_CONFIGURATION_DESCRIPTION', $module);
+	$menu_array['CONFIGURATION']['label']= getTranslatedString('LBL_DOCUMENTS_SETTINGS', $module);
 	$menu_array['LayoutEditor']['location'] = 'index.php?module=Settings&action=LayoutBlockList&parenttab=Settings&formodule='.$module;
 	$menu_array['LayoutEditor']['image_src'] = 'themes/images/orgshar.gif';
 	$menu_array['LayoutEditor']['desc'] = getTranslatedString('LBL_LAYOUT_EDITOR_DESCRIPTION');
 	$menu_array['LayoutEditor']['label'] = getTranslatedString('LBL_LAYOUT_EDITOR');
-
+        
 	if (vtlib_isModuleActive('Tooltip')) {
 		$sql_result = $adb->pquery("select * from vtiger_settings_field where name = ? and active=0", array('LBL_TOOLTIP_MANAGEMENT'));
 		if ($adb->num_rows($sql_result) > 0) {
