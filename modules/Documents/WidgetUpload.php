@@ -20,13 +20,11 @@
 require_once('Smarty_setup.php');
 global $current_language, $currentModule, $theme, $adb;
 $theme_path='themes/'.$theme.'/';
-$file_path = $theme_path.'storage/';
-//$image_path=$theme_path.'images/';
 $smarty = new vtigerCRM_Smarty;
 $smarty->assign('ID',vtlib_purify($_REQUEST['record']));
 $smarty->assign('THEME', $theme);
 /*Include here file types path */
 $smarty->assign('FILE_PATH', $file_path);
 $smarty->assign('MODULE', $currentModule);
-$smarty->display('modules/Documents/dropzone.tpl');
+$smarty->display('Smarty/templates/modules/Documents/dropzone.tpl');
 ?>

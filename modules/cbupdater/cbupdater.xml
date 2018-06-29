@@ -1258,20 +1258,6 @@
 </changeSet>
 <changeSet>
 	<author>etlevabiba</author>
-	<description>Headers for dropzone Documents Module</description>
-	<filename>build/changeSets/dropzonestyle.php</filename>
-	<classname>dropzonestyle</classname>
-	<systemupdate>true</systemupdate>
-</changeSet>
-<changeSet>
-	<author>etlevabiba</author>
-	<description>Uploads widget Documents Module</description>
-	<filename>build/changeSets/widgetUploadDocuments.php</filename>
-	<classname>widgetUploadDocuments</classname>
-	<systemupdate>true</systemupdate>
-</changeSet>
-<changeSet>
-	<author>etlevabiba</author>
 	<description>Create vtiger_notes_tabs table</description>
 	<filename>build/changeSets/add_notes_tabs_table.php</filename>
 	<classname>addnotestabstable</classname>

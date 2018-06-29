@@ -683,19 +683,9 @@ class Documents extends CRMEntity {
 		} else {
 			return true;
 		}
-	}
-        /**
-	 *Invoked to check if Documents links are enabled for the module.
-	 * @param Integer $tabid
-	 */
-	public static function isDocumentsLinkPresent($tabid) {
-		global $adb;
-		$rs=$adb->pquery("SELECT * FROM vtiger_links WHERE linktype='DETAILVIEWBASIC' AND linklabel = 'View History' AND tabid = ?", array($tabid));
-		return ($adb->num_rows($rs)>=1);
-	}
-        
+	}        
         	/**
-	 *Invoked to check the ModTracker cache.
+	 *Invoked to check the Documents cache.
 	 * @param Integer $tabid
 	 */
 	public static function checkModuleInDocumentsCache($tabid) {
@@ -705,50 +695,8 @@ class Documents extends CRMEntity {
 			return false;
 		}
 	}
-        public function vtlib_handler($moduleName, $eventType) {
-		global $adb, $currentModule;
-
-		$documentsModule = Vtiger_Module::getInstance($currentModule);
-		$this->getDocumentsEnabledModules();
-
-		if ($eventType == 'module.postinstall') {
-			$adb->pquery('UPDATE vtiger_tab SET customized=0 WHERE name=?', array($moduleName));
-
-			$fieldid = $adb->getUniqueID('vtiger_settings_field');
-			$blockid = getSettingsBlockId('LBL_OTHER_SETTINGS');
-			$seq_res = $adb->pquery('SELECT max(sequence) AS max_seq FROM vtiger_settings_field WHERE blockid = ?', array($blockid));
-			if ($adb->num_rows($seq_res) > 0) {
-				$cur_seq = $adb->query_result($seq_res, 0, 'max_seq');
-				if ($cur_seq != null) {
-					$seq = $cur_seq + 1;
-				}
-			}
-			$mturl = 'index.php?module=Documents&action=BasicSettings&parenttab=Settings&formodule=Documents';
-			$adb->pquery(
-				'INSERT INTO vtiger_settings_field(fieldid, blockid, name, iconpath, description, linkto, sequence) VALUES (?,?,?,?,?,?,?)',
-				array($fieldid, $blockid, 'Documents', 'set-IcoLoginHistory.gif', 'LBL_MODTRACKER_DESCRIPTION', $mturl, $seq)
-			);
-		} elseif ($eventType == 'module.disabled') {
-			$em = new VTEventsManager($adb);
-			$em->setHandlerInActive('DocumentsHandler');
-			// De-register Common Javascript
-			$documentsModule->deleteLink('HEADERSCRIPT', 'DocumentsCommon_JS');
-		} elseif ($eventType == 'module.enabled') {
-			$em = new VTEventsManager($adb);
-			$em->setHandlerActive('DocumentsHandler');
-			// Register Common Javascript
-			$documentsModule->addLink('HEADERSCRIPT', 'DocumentsCommon_JS', 'modules/Documents/DocumentsCommon.js');
-		} elseif ($eventType == 'module.preuninstall') {
-			// TODO Handle actions when this module is about to be deleted.
-		} elseif ($eventType == 'module.preupdate') {
-			// TODO Handle actions before this module is updated.
-		} elseif ($eventType == 'module.postupdate') {
-			// TODO Handle actions after this module is updated.
-		}
-	}
-
-	/**
-	 * function gives an array of module names for which modtracking is enabled
+        /**
+	 * function gives an array of module names for which Documents is enabled
 	*/
 	public function getDocumentsEnabledModules() {
 		global $adb;
