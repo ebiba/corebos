@@ -685,6 +685,15 @@ class Documents extends CRMEntity {
 		}
 	}        
         	/**
+	 *Invoked to check if Documents links are enabled for the module.
+	 * @param Integer $tabid
+	 */
+	public static function isDocumentsLinkPresent($tabid) {
+		global $adb;
+		$rs=$adb->pquery("SELECT * FROM vtiger_links WHERE linktype='DETAILVIEWBASIC' AND linklabel = 'View History' AND tabid = ?", array($tabid));
+		return ($adb->num_rows($rs)>=1);
+	}
+        	/**
 	 *Invoked to check the Documents cache.
 	 * @param Integer $tabid
 	 */
