@@ -1268,6 +1268,12 @@
 	<description>Create contentjson field for cbMap Module</description>
 	<filename>build/changeSets/2018/add_contentjsonfieldcbMap.php</filename>
 	<classname>createcontentjsonfield</classname>
+ </changeSet>   
+ <changeSet>    
+	<author>mikelkasneci</author>
+	<description>Make ConvertInventoryModule to appear and on non inventory modules</description>
+	<filename>build/changeSets/2018/modifyConvertInventoryModuleTask.php</filename>
+	<classname>modifyConvertInventoryModuleTask</classname>
 	<systemupdate>true</systemupdate>
 </changeSet>
 </updatesChangeLog>

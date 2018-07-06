@@ -270,14 +270,14 @@ if (isset($_REQUEST['year']) && is_numeric(vtlib_purify($_REQUEST['year']))) {
 	$date_data['year'] = vtlib_purify($_REQUEST['year']);
 }
 
-if(empty($date_data)) {
+if (empty($date_data)) {
 	$dateTimeField = new DateTimeField('');
 	$dateValue = $dateTimeField->getDisplayDate();
 	$timeValue = $dateTimeField->getDisplayTime();
 	$dbDateValue = DateTimeField::convertToDBFormat($dateValue);
 	$dateValueArray = explode('-', $dbDateValue);
 	$timeValueArray = explode(':', $timeValue);
-	$date_data = Array(
+	$date_data = array(
 		'day'=>$dateValueArray[2],
 		'month'=>$dateValueArray[1],
 		'fc_month'=>$dateValueArray[1] - 1,
@@ -317,5 +317,6 @@ $smarty->assign('Calendar_Slot_Minutes', "00:".GlobalVariable::getVariable('Cale
 $smarty->assign('Calendar_Slot_Event_Overlap', (GlobalVariable::getVariable('Calendar_Slot_Event_Overlap', 1) ? 'true' : 'false'));
 $smarty->assign('Calendar_Modules_Panel_Visible', GlobalVariable::getVariable('Calendar_Modules_Panel_Visible', 1));
 $smarty->assign('Calendar_Other_Default_Duration', GlobalVariable::getVariable('calendar_other_default_duration', 1));
+$smarty->assign('Calendar_Show_WeekNumber', GlobalVariable::getVariable('Calendar_Show_WeekNumber', 0) ? 'true' : 'false');
 
 $smarty->display('modules/Calendar4You/CalendarView.tpl');
